@@ -1,0 +1,39 @@
+{
+  "name": "project-1",
+  "version": "1.0.0",
+  "engines": {
+    "node": "8.4.0",
+    "npm": "5.3.0"
+  },
+  "description": "Fire emblem heroes team storage system",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel ./client --out-file ./hosted/bundle.js",
+    "watch": "babel --watch ./client --out-file ./hosted/bundle.js",
+    "nodemon": "nodemon --watch ./server ./server/app.js",
+    "start": "node ./server/app.js",
+    "pretest": "eslint ./server --fix",
+    "test": "echo \"Tests Complete\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RyanSpencer/RichMediaProject1.git"
+  },
+  "author": "Ryan Spencer",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RyanSpencer/RichMediaProject1/issues"
+  },
+  "homepage": "https://github.com/RyanSpencer/RichMediaProject1#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.0",
+    "eslint": "^4.7.0",
+    "eslint-config-airbnb": "^15.1.0",
+    "eslint-plugin-import": "^2.7.0",
+    "nodemon": "^1.12.1"
+  },
+  "dependencies": {
+    "fire-emblem-heroes-stats": "^0.9.9"
+  }
+}
