@@ -2,17 +2,233 @@
 <html lang="en">
 <head>
   <title>Fire Emblem Heroes Team Builder</title>
-  
+  <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script>
-    const init = () => {
+    let skills = '';
+    let heroNumbers = 0;
+    
+    const parseJSON = (xhr) => {
+      const content = document.querySelector('#heroNames');
+      const obj = JSON.parse(xhr.response);
+      console.dir(obj);
+      
+      if (obj.names) {
+        let keys = Object.keys(obj.names);
+        
+        for (let i = 0; i < keys.length; i++) {
+          let option = `<option>${obj.names[i]}</option>`;
+          content.innerHTML += option;
+        }
+      }
+       
+      if (obj.skills) {
+        skills = obj.skills;
+      }
+       
+      if (obj.hero) {
+        let keys = Object.keys(skills);
+        document.querySelector('#weapons').innerHTML = '';
+         document.querySelector('#assist').innerHTML = '';
+         document.querySelector('#special').innerHTML = '';
+         document.querySelector('#Askills').innerHTML = '';
+         document.querySelector('#Bskills').innerHTML = '';
+         document.querySelector('#Cskills').innerHTML = '';
+         document.querySelector('#Seals').innerHTML = '';
+        
+        for (let i = 0; i < keys.length; i++) {
+           switch (skills[i].type) {
+            case 'WEAPON':
+              if (obj.hero.weaponType === skills[i].weaponType) {
+                if (skills[i]["exclusive?"] == 'Yes') {
+                  let loop = Object.keys(obj.hero.skills);
+                  for (let j = 0; j < loop.length; j++) {
+                    if (obj.hero.skills[j].name === skills[i].name) {
+                      document.querySelector('#weapons').innerHTML += `<option>${skills[i].name}</option>`;
+                    }
+                  }
+                }
+                else {
+                  document.querySelector('#weapons').innerHTML += `<option>${skills[i].name}</option>`;
+                }
+              }
+              break;
+            case 'ASSIST':
+              const restrict = skills[i].inheritRestriction.split(" ");
+              if (restrict[0] === obj.hero.weaponType.split(" ")[1])
+                document.querySelector('#assist').innerHTML += `<option>${skills[i].name}</option>`;
+              else if (restrict[1] != obj.hero.weaponType.split(" ")[1] && restrict[1] === "Staff") {
+                document.querySelector('#assist').innerHTML += `<option>${skills[i].name}</option>`;
+              }
+              else if (restrict[1] === 'exclusive') {
+                 let loop = Object.keys(obj.hero.skills);
+                 for (let j = 0; j < loop.length; j++) {
+                    if (obj.hero.skills[j].name === skills[i].name) {
+                      document.querySelector('#assist').innerHTML += `<option>${skills[i].name}</option>`;
+                    }
+                 }
+              }
+              break;
+            case 'SPECIAL':
+              document.querySelector('#special').innerHTML += `<option>${skills[i].name}</option>`;
+              break;
+            case 'PASSIVE_A':
+              document.querySelector('#Askills').innerHTML += `<option>${skills[i].name}</option>`;
+              break;
+            case 'PASSIVE_B':
+              document.querySelector('#Bskills').innerHTML += `<option>${skills[i].name}</option>`;
+              break;
+            case 'PASSIVE_C':
+              document.querySelector('#Cskills').innerHTML += `<option>${skills[i].name}</option>`;
+              break;
+            case 'SEAL':
+              document.querySelector('#Seals').innerHTML += `<option>${skills[i].name}</option>`;
+              break;
+          }
+        }
+      }
+    };
+  
+    //Changing content based on status codes we recieve
+    const handleResponse = (xhr, parseResponse) => {
+      
+      console.log(xhr.status);
+      
+//      switch(xhr.status) {
+//        case 200: 
+//        case 304:
+//          content.innerHTML = '<b>Success</b>';
+//          break;
+//        case 201:
+//          content.innerHTML = '<b>Create</b>';
+//          break;
+//        case 204:
+//          content.innerHTML = '<b>Updated (No Content)</b>';
+//          break;
+//        case 400:
+//          content.innerHTML = '<b>Bad Request</b>';
+//          break;
+//        case 404:
+//          content.innerHTML = '<b>Resource Not Found</b>';
+//          break;
+//        default:
+//          content.innerHTML = '<b>Error code not implemented by client';
+//          break;
+//      }
+      
+      if (parseResponse) {
+        parseJSON(xhr);
+      }
+      else {
+        console.log('recieved');
+      }         
+    };
+    
+    //called whenever we want to add a new user
+    const sendPost = (e, nameForm) => {
+      
+      const xhr = new XMLHttpRequest();
+      
+      xhr.open(nameMethod, nameAction);
+      
+      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      
+      xhr.setRequestHeader('Accept', 'application/json');
+      
+      xhr.onload = () => handleResponse(xhr, true);
+      
+      const formData = ``;
+      
+      xhr.send(formData);
+      
+      e.preventDefault();
+      
+      return false;
+    };
+    
+    //called whenever we want to get user information
+    const requestUpdate = (e, url) => {
+      
+      const xhr = new XMLHttpRequest();
+      
+      const names = document.querySelector('#heroNames');
+      
+      if (url === '/getName') {
+        const fullUrl = url + "?name=" + names.value;
+        xhr.open('get', fullUrl);
+      }
+      else {
+        xhr.open('get', url);
+      }
+      
+      xhr.setRequestHeader('Accept', 'application/json');
+      
+      xhr.onload = () => handleResponse(xhr, true);
+      
+      xhr.send();
+      
+      if (e) 
+        e.preventDefault();
+      
+      return false;
+    };
 
+    const init = () => {      
+      const addHero = document.querySelector('#heroForm');
+      
+      const getNames = (e) => requestUpdate(e, '/getHeroes');
+      const getInfo = (e) => requestUpdate(e, '/getName');
+      
+      getNames();
+      
+      const names = document.querySelector("#heroNames");
+      
+      names.addEventListener('change', getInfo);
+      addHero.addEventListener('submit', (e) => {
+        const content = document.querySelector('#content');
+        
+        heroNumbers++;
+        
+        content.innerHTML += `<div class='hero' id='hero${heroNumbers}'> </div>`;
+        const div = document.querySelector(`#hero${heroNumbers}`);
+        
+        div.innerHTML += `<p id='name'>Name: ${document.querySelector('#heroNames').value}</p>`;
+        div.innerHTML += `<p id='weapon'>Weapon: ${document.querySelector('#weapons').value}</p>`;
+        div.innerHTML += `<p id='as'>Assist: ${document.querySelector('#assist').value}</p>`;
+        div.innerHTML += `<p id='sp'>Special: ${document.querySelector('#special').value}</p>`;
+        div.innerHTML += `<p id='A'>A Skill: ${document.querySelector('#Askills').value}</p>`;
+        div.innerHTML += `<p id='B'>B Skill: ${document.querySelector('#Bskills').value}</p>`;
+        div.innerHTML += `<p id='C'>C Skill: ${document.querySelector('#Cskills').value}</p>`;
+        div.innerHTML += `<p id='seal'>Sacred Seal: ${document.querySelector('#Seals').value}</p>`;
+        
+        if (heroNumbers == 4) {
+          document.querySelector('#AddHero').style.display = 'none';
+        }
+        
+        e.preventDefault();
+        
+        return false;
+      });
     };
     
     window.onload = init;
   </script>
 </head>
 <body>
+  <form id="heroForm" method='get'>
+    <select id='heroNames'></select>
+    <select id='weapons'></select>
+    <select id='assist'></select>
+    <select id='special'></select>
+    <select id='Askills'></select>
+    <select id='Bskills'></select>
+    <select id='Cskills'></select>
+    <select id='Seals'></select>
+    <input id="AddHero" type="submit" value="Add Hero" />
+  </form>
   
+  <div id="content">
+    <input id="submitTeam" type="submit" value="Add Team"/>
+  </div>
 </body>
 </html>

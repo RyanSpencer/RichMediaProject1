@@ -1,7 +1,6 @@
 const http = require('http');
 const url = require('url');
 const query = require('querystring');
-const stats = require('fire-emblem-heroes-stats');
 const htmlHandler = require('./htmlResponses.js');
 const jsonHandler = require('./jsonResponses.js');
 
@@ -11,6 +10,8 @@ const onRequest = (request, response) => {
   console.dir(request.url);
 
   const parsedUrl = url.parse(request.url);
+  
+  const params = query.parse(parsedUrl.query);
   // swithc based on the type of method used
   switch (request.method) {
     case 'GET':
@@ -18,10 +19,15 @@ const onRequest = (request, response) => {
       switch (parsedUrl.pathname) {
         case '/':
           htmlHandler.getClient(request, response);
-          jsonHandler.heroNames(request, response, stats);
           break;
         case '/style.css':
           htmlHandler.getStyle(request, response);
+          break;
+        case '/getHeroes':
+          jsonHandler.heroNames(request, response);
+          break;
+        case '/getName':
+          jsonHandler.getHero(request, response, params);
           break;
         default:
           jsonHandler.notReal(request, response);
@@ -40,4 +46,3 @@ const onRequest = (request, response) => {
 http.createServer(onRequest).listen(port);
 
 console.log(`Listening on Localhost: ${port}`);
-console.log(stats.default);
