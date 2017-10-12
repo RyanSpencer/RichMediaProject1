@@ -10,7 +10,7 @@ const onRequest = (request, response) => {
   console.dir(request.url);
 
   const parsedUrl = url.parse(request.url);
-  
+
   const params = query.parse(parsedUrl.query);
   // swithc based on the type of method used
   switch (request.method) {

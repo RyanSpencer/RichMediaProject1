@@ -3,9 +3,8 @@ const stats = require('fire-emblem-heroes-stats');
 
 const teams = {};
 
-let etag = crypto.createHash('sha1').update(JSON.stringify(teams));
-let digest = etag.digest('hex');
-
+const etag = crypto.createHash('sha1').update(JSON.stringify(teams));
+const digest = etag.digest('hex');
 
 
 // General response function for get requests
@@ -46,20 +45,20 @@ const notRealMeta = (request, response) => {
   respondMeta(request, response, 404);
 };
 
-const heroNames = (request,response) => {
-  let keys = Object.keys(stats.getReleasedHeroes());
-  names = {};
-  
+const heroNames = (request, response) => {
+  const keys = Object.keys(stats.getReleasedHeroes());
+  const names = {};
+
   for (let i = 0; i < keys.length; i++) {
     names[i] = stats.getReleasedHeroes()[i].name;
   }
-  
+
   const responseJSON = {
     message: 'Success',
-    names: names,
+    names,
     skills: stats.getAllSkills(),
   };
-  
+
   respond(request, response, 200, responseJSON);
 };
 
@@ -69,7 +68,7 @@ const getHero = (request, response, params) => {
     message: 'Success',
     hero: stats.getHero(heroName),
   };
-  
+
   respond(request, response, 200, responseJSON);
 };
 
