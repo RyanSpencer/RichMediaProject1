@@ -7,6 +7,88 @@
   <script>
     let skills = '';
     let heroNumbers = 0;
+    let restrict = "";
+    
+    const parsePassiveSkills = (slot, obj, i, typeSp) => {
+      document.querySelector(slot).innerHTML += `<option>${skills[i].name}</option>`;
+      
+      restrict = skills[i].inheritRestriction.split(" ");
+      
+      if (restrict[0] === obj.hero.moveType) {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if (restrict[1] === "Colorless" && obj.hero.weaponType.split(" ")[0] != "Neutral") {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if (restrict[1] != obj.hero.weaponType.split(" ")[1] && restrict[1] === "Staff") {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if (restrict[0] === "Fliers" && obj.hero.moveType === "Flying") {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if (restrict[0] === "Melee" && (obj.hero.weaponType.split(" ")[0] != "Neutral" && obj.hero.weaponType.split(" ")[1] != "Tome")) {
+        if (restrict.length > 4) {
+          if (obj.hero.moveType === "Infantry" || obj.hero.moveType === "Armored") {
+            loopHeroSkills(slot, obj, i, typeSp);
+          }
+        }
+        else {
+          loopHeroSkills(slot, obj, i, typeSp);
+        }
+      }
+      else if (restrict[0] === "Ranged" && (obj.hero.weaponType.split(" ")[0] === "Neutral" && obj.hero.weaponType.split(" ")[1] === "Tome")) {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if ((restrict[1] === "Blue" || restrict[1] === "Red" || restrict[1] === "Green") && obj.hero.weaponType.split(" ")[0] != restrict[1]) {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if (restrict[1] === "Tome" && (obj.hero.weaponType.split(" ")[1] != "Tome" && obj.hero.weaponType.split(" ")[1] != "Staff")) {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if (restrict[0] === obj.hero.weaponType.split(" ")[1]) {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if (restrict[1] === obj.hero.weaponType.split(" ")[1] && obj.hero.weaponType.split(" ")[0] === restrict[0]) {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      else if (restrict[1] === "exlcusive" || restrict === "None") {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      
+    };
+    
+    //repetitive code for checking which skills each hero can have and where they start
+    const loopHeroSkills = (slot, obj, i, sp) => {
+      let loop = Object.keys(obj.hero.skills);
+      let alreadySet = "";
+      console.log(skills[i].name);
+      //loop through the hero's skills
+      for (let j = 0; j < loop.length; j++) {
+        //check if the hero can naturally have the skill and that is the last skill in the tree
+        //It is the last skill in the tree if it has the highest sp total
+        if (obj.hero.skills[j].name === skills[i].name && skills[i].spCost >= sp.sp) {
+          //If is a skill they have and the highest sp total skill we have so far, set the sp total to be its
+          sp.sp = skills[i].spCost;
+          //Set it as selected and indiciate we have found it, then break
+          document.querySelector(slot).innerHTML += `<option selected>${skills[i].name}</option>`;
+          alreadySet = "true";
+          break;
+        }
+      }
+      //Add it if we can equip it as long as it hasn't already been set
+      //and it isn't exclusive, as exlcusive skills can never be passed and will always be selected to begin with
+      //there are two different types of exclusive, one which is "Is Exclusive" for some assists, and one is "Exlcusive" for some specials
+      if (alreadySet != "true" && skills[i]['exclusive?'] != "Yes") {
+        if (skills[i].inheritRestriction != null) {
+          if (skills[i].inheritRestriction.split(" ")[0] != "Exclusive" &&  skills[i].inheritRestriction.split(" ")[1] != "exclusive") {
+            document.querySelector(slot).innerHTML += `<option>${skills[i].name}</option>`;
+          }
+        }
+        else {
+          document.querySelector(slot).innerHTML += `<option>${skills[i].name}</option>`;
+        }
+      }
+    };
     
     const parseJSON = (xhr) => {
       const content = document.querySelector('#heroNames');
@@ -26,60 +108,95 @@
         skills = obj.skills;
       }
        
+      //When the player chooses a hero and the get resolves from the server
       if (obj.hero) {
         let keys = Object.keys(skills);
+        //Wipe away all boxes
         document.querySelector('#weapons').innerHTML = '';
-         document.querySelector('#assist').innerHTML = '';
-         document.querySelector('#special').innerHTML = '';
-         document.querySelector('#Askills').innerHTML = '';
-         document.querySelector('#Bskills').innerHTML = '';
-         document.querySelector('#Cskills').innerHTML = '';
-         document.querySelector('#Seals').innerHTML = '';
+        document.querySelector('#assist').innerHTML = '';
+        document.querySelector('#special').innerHTML = '';
+        document.querySelector('#Askills').innerHTML = '';
+        document.querySelector('#Bskills').innerHTML = '';
+        document.querySelector('#Cskills').innerHTML = '';
+        document.querySelector('#Seals').innerHTML = '';
         
+        //Created as objects so they can be modified in another class
+        let weaponSP = {sp : 0};
+        let assistSP = {sp : 0};
+        let specialSP = {sp: 0};
+        let aSP = {sp: 0};
+        let bSP = {sp: 0};
+        let cSP = {sp: 0};
+        
+        //Loop through all skills
+        //This is because in FEH there are skills inherit that heroes can have
+        //And skills that they can inherit from other heroes
+        //The goal of this loop is to both grab all skils they normally have and skills
+        //they can inherit and list them all, while starting with the best skills they can
+        //have naturally selcted
         for (let i = 0; i < keys.length; i++) {
            switch (skills[i].type) {
             case 'WEAPON':
-              if (obj.hero.weaponType === skills[i].weaponType) {
-                if (skills[i]["exclusive?"] == 'Yes') {
-                  let loop = Object.keys(obj.hero.skills);
-                  for (let j = 0; j < loop.length; j++) {
-                    if (obj.hero.skills[j].name === skills[i].name) {
-                      document.querySelector('#weapons').innerHTML += `<option>${skills[i].name}</option>`;
-                    }
-                  }
-                }
-                else {
-                  document.querySelector('#weapons').innerHTML += `<option>${skills[i].name}</option>`;
-                }
-              }
+              //Make sure the weapon can be used by this hero
+              if (obj.hero.weaponType === skills[i].weaponType)
+                loopHeroSkills("#weapons", obj, i, weaponSP);
               break;
             case 'ASSIST':
-              const restrict = skills[i].inheritRestriction.split(" ");
-              if (restrict[0] === obj.hero.weaponType.split(" ")[1])
-                document.querySelector('#assist').innerHTML += `<option>${skills[i].name}</option>`;
-              else if (restrict[1] != obj.hero.weaponType.split(" ")[1] && restrict[1] === "Staff") {
-                document.querySelector('#assist').innerHTML += `<option>${skills[i].name}</option>`;
+              restrict = skills[i].inheritRestriction.split(" ");
+              //Some skills are labled "Staff Users Only" under inherit restriction attribute. 
+              //It compares the first word "staff" vs the weaponType, which for staff is "Neutral Staff"
+              //If staff and staff are the same, it adds the skill
+              if (restrict[0] === obj.hero.weaponType.split(" ")[1]) {
+                loopHeroSkills("#assist", obj, i, assistSP);
               }
-              else if (restrict[1] === 'exclusive') {
-                 let loop = Object.keys(obj.hero.skills);
-                 for (let j = 0; j < loop.length; j++) {
-                    if (obj.hero.skills[j].name === skills[i].name) {
-                      document.querySelector('#assist').innerHTML += `<option>${skills[i].name}</option>`;
-                    }
-                 }
+              //Other skills will say "Exclude Staff Users, so this checks to see if Staff is the second word
+              //and then if the weaponType isn't Staff. If both are true than it adds the assist.
+              else if (restrict[1] != obj.hero.weaponType.split(" ")[1] && restrict[1] === "Staff") {
+                loopHeroSkills("#assist", obj, i, assistSP);
+              }
+              //The last type it can be is "Is Exclusive", which is solely for the skills Dance and Sing
+              else if (restrict[1] === "exclusive"){
+                loopHeroSkills("#assist", obj, i, assistSP);
               }
               break;
             case 'SPECIAL':
-              document.querySelector('#special').innerHTML += `<option>${skills[i].name}</option>`;
+              restrict = skills[i].inheritRestriction.split(" ");
+               //Other skills will say "Exclude Staff Users, so this checks to see if Staff is the second word
+              //and then if the weaponType isn't Staff. If both are true than it adds the assist.
+              if (restrict[1] != obj.hero.weaponType.split(" ")[1] && restrict[1] === "Staff") {
+                loopHeroSkills("#special", obj, i, specialSP);
+              }
+              //Some skills are labled "Melee weapons users only
+              //This means we add them unless the hero selected is Staff type, Dagger type, Bow type, and Mage type
+              //as they are all ranged
+              else if (restrict[0] === "Melee" && (obj.hero.weaponType.split(" ")[0] != "Neutral" && obj.hero.weaponType.split(" ")[1] != "Tome")) {
+                loopHeroSkills("#special", obj, i, specialSP);
+              }
+              //Some skills are labled "Staff Users Only" under inherit restriction attribute. 
+              //It compares the first word "staff" vs the weaponType, which for staff is "Neutral Staff"
+              //If staff and staff are the same, it adds the skill
+              else if (restrict[0] === obj.hero.weaponType.split(" ")[1]) {
+                loopHeroSkills("#special", obj, i, specialSP);
+              }
+              //Only one skill in the game has this restriciton, but it's coded in for future sake
+              //There is a resriction of "Sword, Axe, and Lance users only"
+              //This checks if the first word is "Sword," and if the hero is one of thoose three types
+              else if (restrict[0] === "Sword," && (obj.hero.weaponType.split(" ")[1] === "Sword" || obj.hero.weaponType.split(" ")[1] === "Lance" || obj.hero.weaponType.split(" ")[1] === "Axe")) {
+                loopHeroSkills("#special", obj, i, specialSP);
+              }
+              //Lastly there are some skills that have no restrictions, and some which an "Exclusive" tag
+              else if (restrict[0] === "Exclusive" || restrict === "None") {
+                loopHeroSkills("#special", obj, i, specialSP);
+              }
               break;
             case 'PASSIVE_A':
-              document.querySelector('#Askills').innerHTML += `<option>${skills[i].name}</option>`;
+              parsePassiveSkills('#Askills', obj, i, aSP);
               break;
             case 'PASSIVE_B':
-              document.querySelector('#Bskills').innerHTML += `<option>${skills[i].name}</option>`;
+              parsePassiveSkills('#Bskills', obj, i, bSP);
               break;
             case 'PASSIVE_C':
-              document.querySelector('#Cskills').innerHTML += `<option>${skills[i].name}</option>`;
+              parsePassiveSkills('#Cskills', obj, i, cSP);
               break;
             case 'SEAL':
               document.querySelector('#Seals').innerHTML += `<option>${skills[i].name}</option>`;
