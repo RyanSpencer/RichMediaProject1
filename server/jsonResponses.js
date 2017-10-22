@@ -72,9 +72,14 @@ const getHero = (request, response, params) => {
   respond(request, response, 200, responseJSON);
 };
 
+const addTeam = (request, response, bodyParams) => {
+  console.log(bodyParams);
+};
+
 module.exports = {
   notReal,
   notRealMeta,
   heroNames,
   getHero,
+  addTeam,
 };

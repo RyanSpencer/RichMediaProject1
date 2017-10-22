@@ -10,23 +10,32 @@
     let restrict = "";
     
     const parsePassiveSkills = (slot, obj, i, typeSp) => {
-      document.querySelector(slot).innerHTML += `<option>${skills[i].name}</option>`;
       
       restrict = skills[i].inheritRestriction.split(" ");
       
+      //Check for moves that are Infantry only, calvalry only, and armorer only
+      //Checks to see if the hero is the move type
       if (restrict[0] === obj.hero.moveType) {
         loopHeroSkills(slot, obj, i, typeSp);
       }
+      //Exclude Colorless weapon users skills
+      //So non bows, staves, and daggers
       else if (restrict[1] === "Colorless" && obj.hero.weaponType.split(" ")[0] != "Neutral") {
         loopHeroSkills(slot, obj, i, typeSp);
       }
+      //Exclude staff users
+      //checks if hero is non staff
       else if (restrict[1] != obj.hero.weaponType.split(" ")[1] && restrict[1] === "Staff") {
         loopHeroSkills(slot, obj, i, typeSp);
       }
+      //Checks for fliers only
+      //movetype has to be flying
       else if (restrict[0] === "Fliers" && obj.hero.moveType === "Flying") {
         loopHeroSkills(slot, obj, i, typeSp);
       }
+      //Chcecks for melee weapons only, so anything that isn't neutral or tome
       else if (restrict[0] === "Melee" && (obj.hero.weaponType.split(" ")[0] != "Neutral" && obj.hero.weaponType.split(" ")[1] != "Tome")) {
+        //If it's longer than 4 words, it's also infantry and armorered only
         if (restrict.length > 4) {
           if (obj.hero.moveType === "Infantry" || obj.hero.moveType === "Armored") {
             loopHeroSkills(slot, obj, i, typeSp);
@@ -36,22 +45,32 @@
           loopHeroSkills(slot, obj, i, typeSp);
         }
       }
+      //ranged user's only, so only neutral characters and tome characters
       else if (restrict[0] === "Ranged" && (obj.hero.weaponType.split(" ")[0] === "Neutral" && obj.hero.weaponType.split(" ")[1] === "Tome")) {
         loopHeroSkills(slot, obj, i, typeSp);
       }
+      //exclude Blue, green, or red heroes only. Checks if it is one of them and if it isn't that color
       else if ((restrict[1] === "Blue" || restrict[1] === "Red" || restrict[1] === "Green") && obj.hero.weaponType.split(" ")[0] != restrict[1]) {
         loopHeroSkills(slot, obj, i, typeSp);
       }
-      else if (restrict[1] === "Tome" && (obj.hero.weaponType.split(" ")[1] != "Tome" && obj.hero.weaponType.split(" ")[1] != "Staff")) {
+      //Exclude tome and staff users
+      else if (restrict[1] === "Tome" && restrict[3] === "Staff" && (obj.hero.weaponType.split(" ")[1] != "Tome" && obj.hero.weaponType.split(" ")[1] != "Staff")) {
         loopHeroSkills(slot, obj, i, typeSp);
       }
-      else if (restrict[0] === obj.hero.weaponType.split(" ")[1]) {
-        loopHeroSkills(slot, obj, i, typeSp);
-      }
+      //check skills that are only for blue red or green tomes 
       else if (restrict[1] === obj.hero.weaponType.split(" ")[1] && obj.hero.weaponType.split(" ")[0] === restrict[0]) {
         loopHeroSkills(slot, obj, i, typeSp);
       }
-      else if (restrict[1] === "exlcusive" || restrict === "None") {
+      //checks skills that are for bow, axe, lance, sword, or breath only
+      else if (restrict[0] === obj.hero.weaponType.split(" ")[1]) {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      //Checks for excludes fliers
+      else if (restrict[1] === "Fliers" && obj.hero.moveType != "Flying") {
+        loopHeroSkills(slot, obj, i, typeSp);
+      }
+      //Checks for Is Exclusive and None
+      else if (restrict[1] === "exclusive" || restrict[0] === "None") {
         loopHeroSkills(slot, obj, i, typeSp);
       }
       
@@ -61,7 +80,6 @@
     const loopHeroSkills = (slot, obj, i, sp) => {
       let loop = Object.keys(obj.hero.skills);
       let alreadySet = "";
-      console.log(skills[i].name);
       //loop through the hero's skills
       for (let j = 0; j < loop.length; j++) {
         //check if the hero can naturally have the skill and that is the last skill in the tree
@@ -112,13 +130,13 @@
       if (obj.hero) {
         let keys = Object.keys(skills);
         //Wipe away all boxes
-        document.querySelector('#weapons').innerHTML = '';
-        document.querySelector('#assist').innerHTML = '';
-        document.querySelector('#special').innerHTML = '';
-        document.querySelector('#Askills').innerHTML = '';
-        document.querySelector('#Bskills').innerHTML = '';
-        document.querySelector('#Cskills').innerHTML = '';
-        document.querySelector('#Seals').innerHTML = '';
+        document.querySelector('#weapons').innerHTML = `<option selected>---</option>`;
+        document.querySelector('#assist').innerHTML = `<option selected>---</option>`;
+        document.querySelector('#special').innerHTML = `<option selected>---</option>`;
+        document.querySelector('#Askills').innerHTML = `<option selected>---</option>`;
+        document.querySelector('#Bskills').innerHTML = `<option selected>---</option>`;
+        document.querySelector('#Cskills').innerHTML = `<option selected>---</option>`;
+        document.querySelector('#Seals').innerHTML = `<option selected>---</option>`;
         
         //Created as objects so they can be modified in another class
         let weaponSP = {sp : 0};
@@ -242,11 +260,13 @@
     };
     
     //called whenever we want to add a new user
-    const sendPost = (e, nameForm) => {
+    const sendPost = (e, url) => {
+      
+      console.log('yep');
       
       const xhr = new XMLHttpRequest();
       
-      xhr.open(nameMethod, nameAction);
+      xhr.open('POST', url);
       
       xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
       
@@ -254,7 +274,23 @@
       
       xhr.onload = () => handleResponse(xhr, true);
       
-      const formData = ``;
+      let formData= {};
+      
+      for (var j = 1; j <= heroNumbers; j++) {
+        const elements = document.querySelector(`#hero${j}`).querySelectorAll("*");
+        
+        formData[`hero${j}`] = {};
+        
+        console.log(elements);
+        
+        for (var i = 0; i < elements.length; i++ ) {
+          formData[`hero${j}`][`${elements[i].textContent.split(":")[0]}`] = `${elements[i].textContent.split(":")[1]}`;
+        }
+      
+      }
+      //formData = `Name=${document.querySelector("#name").value}&Weapon=${document.querySelector("#weapon").value}&Assist=${document.querySelector("#as").value}
+      //                  &Special=${document.querySelector("#sp").value}&ASkill=${document.querySelector("#A").value}&BSkill=${document.querySelector("#B").value}
+       //                 &CSkill=${document.querySelector("#C").value}&Seal=${document.querySelector("#seal").value}`;
       
       xhr.send(formData);
       
@@ -292,15 +328,18 @@
 
     const init = () => {      
       const addHero = document.querySelector('#heroForm');
+      const teams = document.querySelector('#content');
       
       const getNames = (e) => requestUpdate(e, '/getHeroes');
       const getInfo = (e) => requestUpdate(e, '/getName');
+      const addTeam = (e) => sendPost(e, '/addTeam');
       
       getNames();
       
       const names = document.querySelector("#heroNames");
       
       names.addEventListener('change', getInfo);
+      teams.addEventListener('submit', addTeam);
       addHero.addEventListener('submit', (e) => {
         const content = document.querySelector('#content');
         
@@ -309,14 +348,14 @@
         content.innerHTML += `<div class='hero' id='hero${heroNumbers}'> </div>`;
         const div = document.querySelector(`#hero${heroNumbers}`);
         
-        div.innerHTML += `<p id='name'>Name: ${document.querySelector('#heroNames').value}</p>`;
-        div.innerHTML += `<p id='weapon'>Weapon: ${document.querySelector('#weapons').value}</p>`;
-        div.innerHTML += `<p id='as'>Assist: ${document.querySelector('#assist').value}</p>`;
-        div.innerHTML += `<p id='sp'>Special: ${document.querySelector('#special').value}</p>`;
-        div.innerHTML += `<p id='A'>A Skill: ${document.querySelector('#Askills').value}</p>`;
-        div.innerHTML += `<p id='B'>B Skill: ${document.querySelector('#Bskills').value}</p>`;
-        div.innerHTML += `<p id='C'>C Skill: ${document.querySelector('#Cskills').value}</p>`;
-        div.innerHTML += `<p id='seal'>Sacred Seal: ${document.querySelector('#Seals').value}</p>`;
+        div.innerHTML += `<p class='name'>Name: ${document.querySelector('#heroNames').value}</p>`;
+        div.innerHTML += `<p class='weapon'>Weapon: ${document.querySelector('#weapons').value}</p>`;
+        div.innerHTML += `<p class='as'>Assist: ${document.querySelector('#assist').value}</p>`;
+        div.innerHTML += `<p class='sp'>Special: ${document.querySelector('#special').value}</p>`;
+        div.innerHTML += `<p class='A'>ASkill: ${document.querySelector('#Askills').value}</p>`;
+        div.innerHTML += `<p class='B'>BSkill: ${document.querySelector('#Bskills').value}</p>`;
+        div.innerHTML += `<p class='C'>CSkill: ${document.querySelector('#Cskills').value}</p>`;
+        div.innerHTML += `<p class='seal'>SacredSeal: ${document.querySelector('#Seals').value}</p>`;
         
         if (heroNumbers == 4) {
           document.querySelector('#AddHero').style.display = 'none';
@@ -344,8 +383,8 @@
     <input id="AddHero" type="submit" value="Add Hero" />
   </form>
   
-  <div id="content">
+  <form id="content">
     <input id="submitTeam" type="submit" value="Add Team"/>
-  </div>
+  </form>
 </body>
 </html>
