@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const stats = require('fire-emblem-heroes-stats');
 
-let teams = {};
+const teams = {};
 
 const etag = crypto.createHash('sha1').update(JSON.stringify(teams));
 const digest = etag.digest('hex');
@@ -62,7 +62,7 @@ const heroNames = (request, response) => {
   respond(request, response, 200, responseJSON);
 };
 
-const getHero = (request, response, params) => {  
+const getHero = (request, response, params) => {
   const heroName = params.name;
   const responseJSON = {
     message: 'Success',
@@ -74,47 +74,54 @@ const getHero = (request, response, params) => {
 
 const addTeam = (request, response, body) => {
   console.dir(body);
-  
+
   const responseJSON = {
     message: 'Need team name and at least one hero.',
   };
-  
-  //Check if there is at least 1 hero and if there is a team name
+
+  // Check if there is at least 1 hero and if there is a team name
   if (body.num < 1 || !body.teamName) {
-    responseJSON.id = "missingParams";
+    responseJSON.id = 'missingParams';
     return respond(request, response, 400, responseJSON);
   }
-  
+
   let responseCode = 201;
-  
+
   if (teams[body.teamName]) {
     responseCode = 204;
-  }
-  else {
+  } else {
     teams[body.teamName] = {};
   }
-  
-  if (body.num == 1) {
+
+  if (body.num === 1) {
     teams[body.teamName][body.Name] = {};
-    teams[body.teamName][body.Name] = {"Weapon" : body.Weapon, "Assist" : body.Assist, "Special" : body.Special, "ASkill" : body.ASkill, 
-                                       "BSkill" : body.BSkill, "CSkill" : body.CSkill, "Seal" : body.SacredSeal};
-  }
-  else {
+    teams[body.teamName][body.Name] = { Weapon: body.Weapon,
+      Assist: body.Assist,
+      Special: body.Special,
+      ASkill: body.ASkill,
+      BSkill: body.BSkill,
+      CSkill: body.CSkill,
+      Seal: body.SacredSeal };
+  } else {
     for (let i = 0; i < body.num; i++) {
       teams[body.teamName][body.Name[i]] = {};
-      teams[body.teamName][body.Name[i]] = {"Weapon" : body.Weapon[i], "Assist" : body.Assist[i], "Special" : body.Special[i], 
-                                            "ASkill" : body.ASkill[i], "BSkill" : body.BSkill[i], "CSkill" : body.CSkill[i], "Seal" : body.SacredSeal[i]};
+      teams[body.teamName][body.Name[i]] = { Weapon: body.Weapon[i],
+        Assist: body.Assist[i],
+        Special: body.Special[i],
+        ASkill: body.ASkill[i],
+        BSkill: body.BSkill[i],
+        CSkill: body.CSkill[i],
+        Seal: body.SacredSeal[i] };
     }
   }
   console.log(teams);
-  
+
   if (responseCode === 201) {
     responseJSON.message = 'Created Successfully';
     return respond(request, response, responseCode, responseJSON);
   }
-  
+
   return respondMeta(request, response, responseCode);
-  
 };
 
 module.exports = {

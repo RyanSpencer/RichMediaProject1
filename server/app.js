@@ -37,27 +37,28 @@ const onRequest = (request, response) => {
     case 'HEAD':
       jsonHandler.notRealMeta(request, response);
       break;
-    case 'POST':
+    case 'POST': {
       const res = response;
-      
+
       const body = [];
-      
+
       request.on('error', (err) => {
         console.log(err);
-        res.statusCode =400;
+        res.statusCode = 400;
         res.end();
       });
-      
+
       request.on('data', (chunk) => {
-        body.push(chunk);        
+        body.push(chunk);
       });
-  
+
       request.on('end', () => {
         const bodyString = Buffer.concat(body).toString();
         const bodyParams = query.parse(bodyString);
         jsonHandler.addTeam(request, res, bodyParams);
       });
       break;
+    }
     default:
       jsonHandler.notReal(request, response);
       break;
