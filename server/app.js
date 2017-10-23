@@ -54,9 +54,8 @@ const onRequest = (request, response) => {
   
       request.on('end', () => {
         const bodyString = Buffer.concat(body).toString();
-        
-        
-        jsonHandler.addTeam(request, res, bodyString);
+        const bodyParams = query.parse(bodyString);
+        jsonHandler.addTeam(request, res, bodyParams);
       });
       break;
     default:

@@ -258,7 +258,7 @@
         console.log('recieved');
       }         
     };
-    
+  
     //called whenever we want to add a new user
     const sendPost = (e, url) => {
       
@@ -274,23 +274,28 @@
       
       xhr.onload = () => handleResponse(xhr, true);
       
-      let formData= {};
+      let formData= "";
+      
+      const formElement = document.querySelector("#content");
       
       for (var j = 1; j <= heroNumbers; j++) {
         const elements = document.querySelector(`#hero${j}`).querySelectorAll("*");
         
-        formData[`hero${j}`] = {};
-        
         console.log(elements);
         
         for (var i = 0; i < elements.length; i++ ) {
-          formData[`hero${j}`][`${elements[i].textContent.split(":")[0]}`] = `${elements[i].textContent.split(":")[1]}`;
+          formData+=`${elements[i].textContent.split(" : ")[0]}=${elements[i].textContent.split(" : ")[1]}`;
+          if (i < elements.length - 1) {
+            formData+="&";
+          }
         }
-      
+        formData+="&";
       }
-      //formData = `Name=${document.querySelector("#name").value}&Weapon=${document.querySelector("#weapon").value}&Assist=${document.querySelector("#as").value}
-      //                  &Special=${document.querySelector("#sp").value}&ASkill=${document.querySelector("#A").value}&BSkill=${document.querySelector("#B").value}
-       //                 &CSkill=${document.querySelector("#C").value}&Seal=${document.querySelector("#seal").value}`;
+      formData+="num=" + heroNumbers;
+      
+      formData+="&teamName=" + document.querySelector("#teamName").value;
+      
+      console.log(formData);
       
       xhr.send(formData);
       
@@ -345,21 +350,39 @@
         
         heroNumbers++;
         
-        content.innerHTML += `<div class='hero' id='hero${heroNumbers}'> </div>`;
-        const div = document.querySelector(`#hero${heroNumbers}`);
+        const div = document.createElement('div');
+        div.id = `hero${heroNumbers}`
+        div.className = 'hero';
+        div.innerHTML += `<p class='name'>Name : ${document.querySelector('#heroNames').value}</p>`;
+        div.innerHTML += `<p class='weapon'>Weapon : ${document.querySelector('#weapons').value}</p>`;
+        div.innerHTML += `<p class='as'>Assist : ${document.querySelector('#assist').value}</p>`;
+        div.innerHTML += `<p class='sp'>Special : ${document.querySelector('#special').value}</p>`;
+        div.innerHTML += `<p class='A'>ASkill : ${document.querySelector('#Askills').value}</p>`;
+        div.innerHTML += `<p class='B'>BSkill : ${document.querySelector('#Bskills').value}</p>`;
+        div.innerHTML += `<p class='C'>CSkill : ${document.querySelector('#Cskills').value}</p>`;
+        div.innerHTML += `<p class='seal'>SacredSeal : ${document.querySelector('#Seals').value}</p>`;
         
-        div.innerHTML += `<p class='name'>Name: ${document.querySelector('#heroNames').value}</p>`;
-        div.innerHTML += `<p class='weapon'>Weapon: ${document.querySelector('#weapons').value}</p>`;
-        div.innerHTML += `<p class='as'>Assist: ${document.querySelector('#assist').value}</p>`;
-        div.innerHTML += `<p class='sp'>Special: ${document.querySelector('#special').value}</p>`;
-        div.innerHTML += `<p class='A'>ASkill: ${document.querySelector('#Askills').value}</p>`;
-        div.innerHTML += `<p class='B'>BSkill: ${document.querySelector('#Bskills').value}</p>`;
-        div.innerHTML += `<p class='C'>CSkill: ${document.querySelector('#Cskills').value}</p>`;
-        div.innerHTML += `<p class='seal'>SacredSeal: ${document.querySelector('#Seals').value}</p>`;
+        content.appendChild(div);
         
         if (heroNumbers == 4) {
           document.querySelector('#AddHero').style.display = 'none';
         }
+        
+        const button = document.createElement('p');
+        button.id = `delete${heroNumbers}`;
+        button.innerHTML='X';
+        
+        const pass = heroNumbers;
+        
+        div.appendChild(button);
+        
+        button.onclick = (e) => {
+          content.removeChild(div);
+          heroNumbers--;
+        };
+        
+        console.dir(button);
+        console.dir(document.querySelector(`#delete${heroNumbers-1}`));
         
         e.preventDefault();
         
@@ -384,6 +407,8 @@
   </form>
   
   <form id="content">
+    <label for="teamName">Team Name:</label>
+    <input id="teamName" type="text"/>
     <input id="submitTeam" type="submit" value="Add Team"/>
   </form>
 </body>
