@@ -7,6 +7,7 @@
   <script>
     let skills = '';
     let heroNumbers = 0;
+    let heroIndex = [0, 0, 0, 0];
     let restrict = "";
     
     const parsePassiveSkills = (slot, obj, i, typeSp) => {
@@ -114,6 +115,7 @@
       console.dir(obj);
       
       if (obj.names) {
+        //Populate the list of the hero names
         let keys = Object.keys(obj.names);
         content.innerHTML = `<option>-----</option>`;
         for (let i = 0; i < keys.length; i++) {
@@ -122,6 +124,7 @@
         }
       }
        
+      //Populate the internal list of skils
       if (obj.skills) {
         skills = obj.skills;
       }
@@ -222,6 +225,7 @@
           }
         }
       }
+      //Populate the select menu with the names of the teams
       if (obj.teamNames) {
         const searchNames = document.querySelector('#searchName');
         searchNames.innerHTML = "<option>---</option>";
@@ -231,6 +235,7 @@
         }
       }
       
+      //When we get a team searched add them in using the similar system to picking the heroes
       if (obj.team) {
         const searchSection = document.querySelector('#results');
         searchSection.innerHTML = "";
@@ -260,28 +265,35 @@
       
       console.log(xhr.status);
       
+      const stat = document.querySelector('#status');
+      
       switch(xhr.status) {
         case 200: 
         case 304:
-          content.innerHTML = '<b>Success</b>';
+          stat.innerHTML = "Success";
           break;
         case 201:
         case 204:
+          //When the team is successfully created or updated remove the temporray heroes div
           const form = document.querySelector('#content');
           for (let i = heroNumbers; i > 0; i--) {
             const hero = document.querySelector(`#hero${i}`);
             form.removeChild(hero);
+            heroIndex[i - 1] = 0;
           }
           heroNumbers = 0;
           document.querySelector('#AddHero').style.display = 'inline';
+          stat.innerHTML = "Team Created";
+          document.querySelector('#teamName').value = '';
+          break;
         case 400:
-          content.innerHTML = '<b>Bad Request</b>';
+          stat.innerHTML = "Team needs a name and at least one hero"
           break;
         case 404:
-          content.innerHTML = '<b>Resource Not Found</b>';
+          stat.innerHTML = "Server has no teams"
           break;
         default:
-          content.innerHTML = '<b>Error code not implemented by client';
+          stat.innerHTML = "Status Code not implemented by server, this probably shouldn't happen";
           break;
       }
       
@@ -317,6 +329,7 @@
         
         console.log(elements);
         
+        //Loop through all the lines in the hero div and split the string based on the colon
         for (var i = 0; i < elements.length; i++ ) {
           formData+=`${elements[i].textContent.split(" : ")[0]}=${elements[i].textContent.split(" : ")[1]}`;
           if (i < elements.length - 1) {
@@ -325,6 +338,7 @@
         }
         formData+="&";
       }
+      //Add the number of team members and the name
       formData+="num=" + heroNumbers;
       
       formData+="&teamName=" + document.querySelector("#teamName").value;
@@ -349,19 +363,26 @@
       if (url === '/getName') {
         const fullUrl = url + "?name=" + names.value;
         xhr.open('get', fullUrl);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onload = () => handleResponse(xhr, true);
       }
       else if (url === '/findTeam') {
         const bigUrl = url + "?team=" + teamName.value;
         xhr.open('get', bigUrl);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onload = () => handleResponse(xhr, true);
+      }
+      else if (url === '/clearDatabase') {
+        xhr.open('head', url);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onload = () => handleResponse(xhr, false);
       }
       else {
         xhr.open('get', url);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onload = () => handleResponse(xhr, true);
+        
       }
-      
-      xhr.setRequestHeader('Accept', 'application/json');
-      
-      xhr.onload = () => handleResponse(xhr, true);
-      
       xhr.send();
       
       if (e) 
@@ -375,16 +396,19 @@
       const searchForm = document.querySelector('#search');
       const names = document.querySelector("#heroNames");
       const chooseTeam = document.querySelector('#searchName');
+      const clear = document.querySelector('#clearBase');
       
       const addTeam = (e) => sendPost(e, '/addTeam');
       const searchTeams = (e) => requestUpdate(e, '/searchTeam');
       const getInfo = (e) => requestUpdate(e, '/getName');
       const grabTeam = (e) => requestUpdate(e, '/findTeam');
+      const clearTeam = (e) => requestUpdate(e, '/clearDatabase');
       
       teams.addEventListener('submit', addTeam);
       searchForm.addEventListener('submit', searchTeams);
       names.addEventListener('change', getInfo);
       chooseTeam.addEventListener('change', grabTeam);
+      clear.addEventListener('click', clearTeam);
       
       const getNames = (e) => requestUpdate(e, '/getHeroes');
       getNames();
@@ -395,34 +419,89 @@
         
         heroNumbers++;
         
+        let index = 0;
+        
+        //loop to check on which spots are open for id
+        for (let i = 1; i <= 4; i++) {
+          if (heroIndex[i - 1] == 0) {
+            heroIndex[i - 1] = i;
+            index = i;
+            break;
+          }
+        }
+        
+        //Creation of the hero display
         const div = document.createElement('div');
-        div.id = `hero${heroNumbers}`
+        div.id = `hero${index}`
         div.className = 'hero';
-        div.innerHTML += `<p class='name'>Name : ${document.querySelector('#heroNames').value}</p>`;
-        div.innerHTML += `<p class='weapon'>Weapon : ${document.querySelector('#weapons').value}</p>`;
-        div.innerHTML += `<p class='as'>Assist : ${document.querySelector('#assist').value}</p>`;
-        div.innerHTML += `<p class='sp'>Special : ${document.querySelector('#special').value}</p>`;
-        div.innerHTML += `<p class='A'>ASkill : ${document.querySelector('#Askills').value}</p>`;
-        div.innerHTML += `<p class='B'>BSkill : ${document.querySelector('#Bskills').value}</p>`;
-        div.innerHTML += `<p class='C'>CSkill : ${document.querySelector('#Cskills').value}</p>`;
-        div.innerHTML += `<p class='seal'>SacredSeal : ${document.querySelector('#Seals').value}</p>`;
+        
+        //Delete Button
+        const button = document.createElement('p');
+        button.id = `delete${index}`;
+        button.innerHTML='X';
+        button.className = 'delete';
+        div.appendChild(button);
+        
+        //Name Line
+        const p = document.createElement('p');
+        p.className = 'name';
+        p.innerHTML = 'Name : ' + document.querySelector('#heroNames').value;
+        div.appendChild(p);
+        
+        //Weapon Line
+        const w = document.createElement('p');
+        w.className = 'weapon';
+        w.innerHTML = 'Weapon : ' + document.querySelector('#weapons').value;
+        div.appendChild(w);
+        
+        //Asist Line
+        const as = document.createElement('p');
+        as.className = 'as';
+        as.innerHTML = 'Assist : ' + document.querySelector('#assist').value;
+        div.appendChild(as);
+        
+        
+        //Special Line
+        const s = document.createElement('p');
+        s.className = 'sp';
+        s.innerHTML = 'Special : ' + document.querySelector('#special').value;
+        div.appendChild(s);
+        
+        //A Skill Line
+        const a = document.createElement('p');
+        a.className = 'A';
+        a.innerHTML = 'ASkill : ' + document.querySelector('#Askills').value;
+        div.appendChild(a);
+        
+        //B Skill Line
+        const b = document.createElement('p');
+        b.className = 'B';
+        b.innerHTML = 'BSkill : ' + document.querySelector('#Bskills').value;
+        div.appendChild(b);
+        
+        //C Skill Line
+        const c = document.createElement('p');
+        c.className = 'C';
+        c.innerHTML = 'CSkill : ' + document.querySelector('#Cskills').value;
+        div.appendChild(c);
+        
+        //Sacred Seal Line
+        const se = document.createElement('p');
+        se.className = 'seal';
+        se.innerHTML = 'SacredSeal : ' + document.querySelector('#Seals').value;
+        div.appendChild(se);
         
         content.appendChild(div);
         
+        //Hide the add hero button if there are 4 heroes
         if (heroNumbers == 4) {
           document.querySelector('#AddHero').style.display = 'none';
         }
         
-        const button = document.createElement('p');
-        button.id = `delete${heroNumbers}`;
-        button.innerHTML='X';
-        
-        const pass = heroNumbers;
-        
-        div.appendChild(button);
-        
+        //Set up remove hero button
         button.onclick = (e) => {
           content.removeChild(div);
+          heroIndex[index - 1] = 0;
           heroNumbers--;
           if (heroNumbers < 4) {
              document.querySelector('#AddHero').style.display = 'inline';
@@ -439,6 +518,8 @@
   </script>
 </head>
 <body>
+  <div id="topbar">Fire Emblem Heroes Team Builder</div>
+  <p id="status"><p>
   <form id="heroForm" method='get'>
     <select id='heroNames'></select>
     <select id='weapons'></select>
@@ -463,5 +544,7 @@
     <input id="submitSearch" type="submit" value= "Search"/>
     <div id='results'></div>
   </form>
+  
+  <input type="submit" value="Clear Database" id="clearBase"/>
 </body>
 </html>

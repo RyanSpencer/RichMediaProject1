@@ -1,6 +1,60 @@
 .hero {
-  border: 5px solid black;
-  padding: 5px;
+  background: #5c78a5;
+  padding: 10px;
   margin: 10px;
   float: left;
+  color: white;
+  box-shadow: 1px 1px 1px rgb(5,5,5);
+}
+.hero p{
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.delete {
+  border: 1px black;
+  background: rgb(255, 255, 255);
+  color: black;
+  float: right;
+  width: 10%;
+  padding: 2px;
+}
+.delete:hover {
+  background: rgb(225, 225, 225);
+  cursor: pointer;
+}
+#heroForm {
+  margin: 10px;
+  padding: 5px;
+  width: 200px;
+  text-align-last: center;
+  display: inline;
+  float: left;
+}
+#heroForm select {
+  width: 100%;
+  margin: 1px;
+}
+#content {
+  float: left;
+}
+body {
+  background: #f6f6f6;
+}
+#search {
+  float: left;
+  clear: left;
+}
+#topbar {
+  padding: 15px;
+  width: 100%;
+  background: #0B4E87;
+  color: white;
+  box-shadow: 1px 1px 1px rgb(5,5,5);
+}
+#status {
+  background: #424242;
+  padding: 4px;
+  width: 100%;
+  color: white;
+  margin-top: 0px;
 }

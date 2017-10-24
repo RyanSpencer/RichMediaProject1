@@ -1,10 +1,10 @@
 const crypto = require('crypto');
 const stats = require('fire-emblem-heroes-stats');
 
-const teams = {};
+let teams = {};
 
-const etag = crypto.createHash('sha1').update(JSON.stringify(teams));
-const digest = etag.digest('hex');
+let etag = crypto.createHash('sha1').update(JSON.stringify(teams));
+let digest = etag.digest('hex');
 
 
 // General response function for get requests
@@ -45,6 +45,7 @@ const notRealMeta = (request, response) => {
   respondMeta(request, response, 404);
 };
 
+// Grabs all the names of heroes and sends them to the server
 const heroNames = (request, response) => {
   const keys = Object.keys(stats.getReleasedHeroes());
   const names = {};
@@ -62,6 +63,7 @@ const heroNames = (request, response) => {
   respond(request, response, 200, responseJSON);
 };
 
+// Grabs a hero based on the name based in
 const getHero = (request, response, params) => {
   const heroName = params.name;
   const responseJSON = {
@@ -72,6 +74,7 @@ const getHero = (request, response, params) => {
   respond(request, response, 200, responseJSON);
 };
 
+// Post method to add the team
 const addTeam = (request, response, body) => {
   console.dir(body);
 
@@ -92,6 +95,7 @@ const addTeam = (request, response, body) => {
   }
   teams[body.teamName] = {};
 
+  // Populates the object but doesn't iterate if there is only one hero on the team
   if (body.num === '1') {
     teams[body.teamName][body.Name] = {};
     teams[body.teamName][body.Name] = { Weapon: body.Weapon,
@@ -115,6 +119,11 @@ const addTeam = (request, response, body) => {
   }
   console.log(teams);
 
+  etag = crypto.createHash('sha1').update(JSON.stringify(teams));
+
+  digest = etag.digest('hex');
+
+
   if (responseCode === 201) {
     responseJSON.message = 'Created Successfully';
     return respond(request, response, responseCode, responseJSON);
@@ -123,7 +132,12 @@ const addTeam = (request, response, body) => {
   return respondMeta(request, response, responseCode);
 };
 
+// Searches through all the stored team names and then sends them back as a object
 const findTeams = (request, response) => {
+  if (request.headers['if-none-match'] === digest) {
+    return respondMeta(request, response, 304);
+  }
+
   const teamNames = {};
   const keys = Object.keys(teams);
   for (let i = 0; i < keys.length; i++) {
@@ -141,6 +155,7 @@ const findTeams = (request, response) => {
   return respond(request, response, 200, responseJSON);
 };
 
+// Grabs the team based on selection of the dropdown
 const grabTeam = (request, response, params) => {
   const responseJSON = {
     message: 'Success',
@@ -148,6 +163,15 @@ const grabTeam = (request, response, params) => {
   };
 
   return respond(request, response, 200, responseJSON);
+};
+
+// Clears database
+const clearMeta = (request, response) => {
+  teams = {};
+  etag = crypto.createHash('sha1').update(JSON.stringify(teams));
+  digest = etag.digest('hex');
+
+  return respondMeta(request, response, 200);
 };
 
 module.exports = {
@@ -158,4 +182,5 @@ module.exports = {
   addTeam,
   findTeams,
   grabTeam,
+  clearMeta,
 };

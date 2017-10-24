@@ -41,7 +41,11 @@ const onRequest = (request, response) => {
       }
       break;
     case 'HEAD':
-      jsonHandler.notRealMeta(request, response);
+      if (parsedUrl.pathname) {
+        jsonHandler.clearMeta(request, response);
+      } else {
+        jsonHandler.notRealMeta(request, response);
+      }
       break;
     case 'POST': {
       const res = response;
