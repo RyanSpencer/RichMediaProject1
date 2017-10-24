@@ -115,7 +115,7 @@
       
       if (obj.names) {
         let keys = Object.keys(obj.names);
-        
+        content.innerHTML = `<option>-----</option>`;
         for (let i = 0; i < keys.length; i++) {
           let option = `<option>${obj.names[i]}</option>`;
           content.innerHTML += option;
@@ -222,6 +222,37 @@
           }
         }
       }
+      if (obj.teamNames) {
+        const searchNames = document.querySelector('#searchName');
+        searchNames.innerHTML = "<option>---</option>";
+        let keys = Object.keys(obj.teamNames);
+        for (let i = 0; i < keys.length; i++) {
+          searchNames.innerHTML += `<option>${obj.teamNames[i]}</option>`
+        }
+      }
+      
+      if (obj.team) {
+        const searchSection = document.querySelector('#results');
+        searchSection.innerHTML = "";
+        
+        const keys = Object.keys(obj.team);
+        
+        for(hero in obj.team) {
+          const div = document.createElement('div');
+        
+          div.className = 'hero';
+          div.innerHTML += `<p class='name'>Name : ${hero}</p>`;
+          div.innerHTML += `<p class='weapon'>Weapon : ${obj.team[hero].Weapon}</p>`;
+          div.innerHTML += `<p class='as'>Assist : ${obj.team[hero].Assist}</p>`;
+          div.innerHTML += `<p class='sp'>Special : ${obj.team[hero].Special}</p>`;
+          div.innerHTML += `<p class='A'>ASkill : ${obj.team[hero].ASkill}</p>`;
+          div.innerHTML += `<p class='B'>BSkill : ${obj.team[hero].BSkill}</p>`;
+          div.innerHTML += `<p class='C'>CSkill : ${obj.team[hero].CSkill}</p>`;
+          div.innerHTML += `<p class='seal'>SacredSeal : ${obj.team[hero].Seal}</p>`;
+
+          searchSection.appendChild(div);
+        }
+      }
     };
   
     //Changing content based on status codes we recieve
@@ -229,27 +260,30 @@
       
       console.log(xhr.status);
       
-//      switch(xhr.status) {
-//        case 200: 
-//        case 304:
-//          content.innerHTML = '<b>Success</b>';
-//          break;
-//        case 201:
-//          content.innerHTML = '<b>Create</b>';
-//          break;
-//        case 204:
-//          content.innerHTML = '<b>Updated (No Content)</b>';
-//          break;
-//        case 400:
-//          content.innerHTML = '<b>Bad Request</b>';
-//          break;
-//        case 404:
-//          content.innerHTML = '<b>Resource Not Found</b>';
-//          break;
-//        default:
-//          content.innerHTML = '<b>Error code not implemented by client';
-//          break;
-//      }
+      switch(xhr.status) {
+        case 200: 
+        case 304:
+          content.innerHTML = '<b>Success</b>';
+          break;
+        case 201:
+        case 204:
+          const form = document.querySelector('#content');
+          for (let i = heroNumbers; i > 0; i--) {
+            const hero = document.querySelector(`#hero${i}`);
+            form.removeChild(hero);
+          }
+          heroNumbers = 0;
+          document.querySelector('#AddHero').style.display = 'inline';
+        case 400:
+          content.innerHTML = '<b>Bad Request</b>';
+          break;
+        case 404:
+          content.innerHTML = '<b>Resource Not Found</b>';
+          break;
+        default:
+          content.innerHTML = '<b>Error code not implemented by client';
+          break;
+      }
       
       if (parseResponse) {
         parseJSON(xhr);
@@ -310,10 +344,15 @@
       const xhr = new XMLHttpRequest();
       
       const names = document.querySelector('#heroNames');
+      const teamName = document.querySelector('#searchName');
       
       if (url === '/getName') {
         const fullUrl = url + "?name=" + names.value;
         xhr.open('get', fullUrl);
+      }
+      else if (url === '/findTeam') {
+        const bigUrl = url + "?team=" + teamName.value;
+        xhr.open('get', bigUrl);
       }
       else {
         xhr.open('get', url);
@@ -331,20 +370,26 @@
       return false;
     };
 
-    const init = () => {      
-      const addHero = document.querySelector('#heroForm');
+    const init = () => {
       const teams = document.querySelector('#content');
+      const searchForm = document.querySelector('#search');
+      const names = document.querySelector("#heroNames");
+      const chooseTeam = document.querySelector('#searchName');
+      
+      const addTeam = (e) => sendPost(e, '/addTeam');
+      const searchTeams = (e) => requestUpdate(e, '/searchTeam');
+      const getInfo = (e) => requestUpdate(e, '/getName');
+      const grabTeam = (e) => requestUpdate(e, '/findTeam');
+      
+      teams.addEventListener('submit', addTeam);
+      searchForm.addEventListener('submit', searchTeams);
+      names.addEventListener('change', getInfo);
+      chooseTeam.addEventListener('change', grabTeam);
       
       const getNames = (e) => requestUpdate(e, '/getHeroes');
-      const getInfo = (e) => requestUpdate(e, '/getName');
-      const addTeam = (e) => sendPost(e, '/addTeam');
-      
       getNames();
-      
-      const names = document.querySelector("#heroNames");
-      
-      names.addEventListener('change', getInfo);
-      teams.addEventListener('submit', addTeam);
+            
+      const addHero = document.querySelector('#heroForm');
       addHero.addEventListener('submit', (e) => {
         const content = document.querySelector('#content');
         
@@ -379,10 +424,10 @@
         button.onclick = (e) => {
           content.removeChild(div);
           heroNumbers--;
+          if (heroNumbers < 4) {
+             document.querySelector('#AddHero').style.display = 'inline';
+          }
         };
-        
-        console.dir(button);
-        console.dir(document.querySelector(`#delete${heroNumbers-1}`));
         
         e.preventDefault();
         
@@ -410,6 +455,13 @@
     <label for="teamName">Team Name:</label>
     <input id="teamName" type="text"/>
     <input id="submitTeam" type="submit" value="Add Team"/>
+  </form>
+  
+  <form id='search'>
+    <label for="searchName">Search for Team:</label>
+    <select id="searchName"></select>
+    <input id="submitSearch" type="submit" value= "Search"/>
+    <div id='results'></div>
   </form>
 </body>
 </html>

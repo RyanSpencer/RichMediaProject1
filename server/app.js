@@ -29,6 +29,12 @@ const onRequest = (request, response) => {
         case '/getName':
           jsonHandler.getHero(request, response, params);
           break;
+        case '/searchTeam':
+          jsonHandler.findTeams(request, response);
+          break;
+        case '/findTeam':
+          jsonHandler.grabTeam(request, response, params);
+          break;
         default:
           jsonHandler.notReal(request, response);
           break;

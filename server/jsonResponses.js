@@ -89,11 +89,10 @@ const addTeam = (request, response, body) => {
 
   if (teams[body.teamName]) {
     responseCode = 204;
-  } else {
-    teams[body.teamName] = {};
   }
+  teams[body.teamName] = {};
 
-  if (body.num === 1) {
+  if (body.num === '1') {
     teams[body.teamName][body.Name] = {};
     teams[body.teamName][body.Name] = { Weapon: body.Weapon,
       Assist: body.Assist,
@@ -124,10 +123,39 @@ const addTeam = (request, response, body) => {
   return respondMeta(request, response, responseCode);
 };
 
+const findTeams = (request, response) => {
+  const teamNames = {};
+  const keys = Object.keys(teams);
+  for (let i = 0; i < keys.length; i++) {
+    teamNames[i] = keys[i];
+  }
+  const responseJSON = {
+    message: 'Success',
+    teamNames,
+  };
+  if (keys.length === 0) {
+    responseJSON.message = 'There is no data on the server';
+    responseJSON.id = 'notFound';
+    return respond(request, response, 404, responseJSON);
+  }
+  return respond(request, response, 200, responseJSON);
+};
+
+const grabTeam = (request, response, params) => {
+  const responseJSON = {
+    message: 'Success',
+    team: teams[params.team],
+  };
+
+  return respond(request, response, 200, responseJSON);
+};
+
 module.exports = {
   notReal,
   notRealMeta,
   heroNames,
   getHero,
   addTeam,
+  findTeams,
+  grabTeam,
 };
